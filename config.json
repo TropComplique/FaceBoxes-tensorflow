@@ -1,0 +1,36 @@
+{
+  "model_params": {
+    "model_dir": "models/run00",
+
+    "depth_multiplier": 1.4,
+    "num_classes": 80, "weight_decay": 1e-5,
+    "pretrained_checkpoint": "pretrained/mobilenet_v2_1.4_224.ckpt",
+    "freeze": "",
+
+    "scales": null,
+    "min_scale": 0.2, "max_scale": 0.95,
+    "aspect_ratios": [0.3333, 0.5, 1.0, 2.0, 3.0],
+    "interpolated_scale_aspect_ratio": 1.0,
+    "reduce_boxes_in_lowest_layer": true,
+
+    "score_threshold": 0.1, "iou_threshold": 0.6, "max_boxes_per_class": 20,
+
+    "localization_loss_weight": 1.0, "classification_loss_weight": 1.0,
+
+    "loss_to_use": "classification",
+    "loc_loss_weight": 0.0, "cls_loss_weight": 1.0,
+    "num_hard_examples": 3000, "nms_threshold": 0.99,
+    "max_negatives_per_positive": 3.0, "min_negatives_per_image": 3,
+
+    "lr_boundaries": [60000, 120000, 150000, 170000],
+    "lr_values": [0.009, 0.005, 0.001, 0.0005, 0.0001]
+  },
+
+  "input_pipeline_params": {
+    "image_size": [512, 512],
+    "batch_size": 16,
+    "train_dataset": "data/train_shards/",
+    "val_dataset": "data/val_shards/",
+    "num_steps": 180000
+  }
+}
