@@ -8,7 +8,7 @@ tf.logging.set_verbosity('INFO')
 
 
 CONFIG = 'config.json'
-GPU_TO_USE = '0'
+GPU_TO_USE = '1'
 
 
 params = json.load(open(CONFIG))

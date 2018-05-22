@@ -20,8 +20,8 @@ Images must have .jpg or .jpeg filename extension.
 Example of a json annotation (with filename "132416.json"):
 {
   "object": [
-    {"bndbox": {"ymin": 20, "ymax": 276, "xmax": 1219, "xmin": 1131}, "name": "dog"},
-    {"bndbox": {"ymin": 1, "ymax": 248, "xmax": 1149, "xmin": 1014}, "name": "person"}
+    {"bndbox": {"ymin": 20, "ymax": 276, "xmax": 1219, "xmin": 1131}, "name": "face"},
+    {"bndbox": {"ymin": 1, "ymax": 248, "xmax": 1149, "xmin": 1014}, "name": "face"}
   ],
   "filename": "132416.jpg",
   "size": {"depth": 3, "width": 1920, "height": 1080}
@@ -29,13 +29,10 @@ Example of a json annotation (with filename "132416.json"):
 
 Example of use:
 python create_tfrecords.py \
-    --image_dir=/home/dan/datasets/BBA/images_val/ \
-    --annotations_dir=/home/dan/datasets/BBA/annotations_val/ \
+    --image_dir=/home/gpu2/hdd/dan/WIDER/val/images/ \
+    --annotations_dir=/home/gpu2/hdd/dan/WIDER/val/annotations/ \
     --output=data/train_shards/ \
-    --labels=data/labels.txt \
     --num_shards=100
-
-labels is a .txt file where each line is a class name.
 """
 
 
@@ -44,12 +41,11 @@ def make_args():
     parser.add_argument('-i', '--image_dir', type=str)
     parser.add_argument('-a', '--annotations_dir', type=str)
     parser.add_argument('-o', '--output', type=str)
-    parser.add_argument('-l', '--labels', type=str)
     parser.add_argument('-s', '--num_shards', type=int, default=1)
     return parser.parse_args()
 
 
-def dict_to_tf_example(annotation, image_dir, labels):
+def dict_to_tf_example(annotation, image_dir):
     """Convert dict to tf.Example proto.
 
     Notice that this function normalizes the bounding
@@ -58,7 +54,6 @@ def dict_to_tf_example(annotation, image_dir, labels):
     Arguments:
         data: a dict.
         image_dir: a string, path to the image directory.
-        labels: a dict, class name -> unique integer.
     Returns:
         an instance of tf.Example.
     """
@@ -79,7 +74,7 @@ def dict_to_tf_example(annotation, image_dir, labels):
     height = int(annotation['size']['height'])
     assert width > 0 and height > 0
     assert image.size[0] == width and image.size[1] == height
-    ymin, xmin, ymax, xmax, classes = [], [], [], [], []
+    ymin, xmin, ymax, xmax = [], [], [], []
 
     just_name = image_name[:-4] if image_name.endswith('.jpg') else image_name[:-5]
     annotation_name = just_name + '.json'
@@ -91,17 +86,12 @@ def dict_to_tf_example(annotation, image_dir, labels):
         b = float(obj['bndbox']['xmin'])/width
         c = float(obj['bndbox']['ymax'])/height
         d = float(obj['bndbox']['xmax'])/width
-        assert (a < c) and (b < d)
-
+        assert (a < c) and (b < d), annotation_name + str(a) +'_' +str(c) +'_'  +str(b) + '_' +str(d)
         ymin.append(a)
         xmin.append(b)
         ymax.append(c)
         xmax.append(d)
-        try:
-            classes.append(labels[obj['name']])
-        except KeyError:
-            print(annotation_name, 'has unknown label!')
-            sys.exit(1)
+        assert obj['name'] == 'face'
 
     example = tf.train.Example(features=tf.train.Features(feature={
         'filename': _bytes_feature(image_name.encode()),
@@ -110,7 +100,6 @@ def dict_to_tf_example(annotation, image_dir, labels):
         'xmax': _float_list_feature(xmax),
         'ymin': _float_list_feature(ymin),
         'ymax': _float_list_feature(ymax),
-        'labels': _int64_list_feature(classes),
     }))
     return example
 
@@ -119,21 +108,12 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def _int64_list_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
-
-
 def _float_list_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
 def main():
     ARGS = make_args()
-
-    with open(ARGS.labels, 'r') as f:
-        labels = {line.strip(): i for i, line in enumerate(f.readlines()) if line.strip()}
-    assert len(labels) > 0
-    print('Possible labels (and label encoding):', labels)
 
     image_dir = ARGS.image_dir
     annotations_dir = ARGS.annotations_dir
@@ -162,7 +142,7 @@ def main():
 
         path = os.path.join(annotations_dir, example)
         annotation = json.load(open(path))
-        tf_example = dict_to_tf_example(annotation, image_dir, labels)
+        tf_example = dict_to_tf_example(annotation, image_dir)
         writer.write(tf_example.SerializeToString())
         num_examples_written += 1
 

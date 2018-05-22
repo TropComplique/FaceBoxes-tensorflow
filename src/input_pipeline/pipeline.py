@@ -46,7 +46,7 @@ class Pipeline:
         if shuffle:
             dataset = dataset.shuffle(buffer_size=num_shards)
 
-        # you cannot set cycle_length too hight
+        # you cannot set cycle_length too high
         cycle_length = min(CYCLE_LENGTH, num_shards)
 
         dataset = dataset.interleave(
@@ -61,7 +61,7 @@ class Pipeline:
         dataset = dataset.map(self._parse_and_preprocess, num_parallel_calls=NUM_THREADS)
 
         # we need batches of fixed size
-        padded_shapes = ([3, self.image_height, self.image_width], [None, 4], [None], [], [])
+        padded_shapes = ([3, self.image_height, self.image_width], [None, 4], [], [])
         dataset = dataset.apply(
            tf.contrib.data.padded_batch_and_drop_remainder(batch_size, padded_shapes)
         )
@@ -81,13 +81,12 @@ class Pipeline:
                 'filenames': a string tensor with shape [batch_size].
             labels: a dict with the following keys
                 'boxes': a float tensor with shape [batch_size, max_num_boxes, 4].
-                'labels': an int tensor with shape [batch_size, max_num_boxes].
                 'num_boxes': an int tensor with shape [batch_size].
             where max_num_boxes = max(num_boxes).
         """
-        images, boxes, labels, num_boxes, filenames = self.iterator.get_next()
+        images, boxes, num_boxes, filenames = self.iterator.get_next()
         features = {'images': images, 'filenames': filenames}
-        labels = {'boxes': boxes, 'labels': labels, 'num_boxes': num_boxes}
+        labels = {'boxes': boxes, 'num_boxes': num_boxes}
         return features, labels
 
     def _parse_and_preprocess(self, example_proto):
@@ -99,7 +98,6 @@ class Pipeline:
             image: a float tensor with shape [3, image_height, image_width],
                 an RGB image with pixel values in the range [0, 1].
             boxes: a float tensor with shape [num_boxes, 4].
-            labels: an int tensor with shape [num_boxes].
             num_boxes: an int tensor with shape [].
             filename: a string tensor with shape [].
         """
@@ -110,7 +108,6 @@ class Pipeline:
             'xmin': tf.FixedLenSequenceFeature([], tf.float32, allow_missing=True),
             'ymax': tf.FixedLenSequenceFeature([], tf.float32, allow_missing=True),
             'xmax': tf.FixedLenSequenceFeature([], tf.float32, allow_missing=True),
-            'labels': tf.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
         }
         parsed_features = tf.parse_single_example(example_proto, features)
 
@@ -118,9 +115,6 @@ class Pipeline:
         image = tf.image.decode_jpeg(parsed_features['image'], channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
         # now pixel values are scaled to [0, 1] range
-
-        # get labels
-        labels = tf.to_int32(parsed_features['labels'])
 
         # get groundtruth boxes, they must be in from-zero-to-one format
         boxes = tf.stack([
@@ -131,7 +125,7 @@ class Pipeline:
         boxes = tf.clip_by_value(boxes, clip_value_min=0.0, clip_value_max=1.0)
 
         if self.augmentation:
-            image, boxes, labels = self._augmentation_fn(image, boxes, labels)
+            image, boxes = self._augmentation_fn(image, boxes)
         else:
             image = tf.image.resize_images(
                 image, [self.image_height, self.image_width],
@@ -141,18 +135,18 @@ class Pipeline:
         image = tf.transpose(image, perm=[2, 0, 1])  # to NCHW format
         num_boxes = tf.to_int32(tf.shape(boxes)[0])
         filename = parsed_features['filename']
-        return image, boxes, labels, num_boxes, filename
+        return image, boxes, num_boxes, filename
 
-    def _augmentation_fn(self, image, boxes, labels):
+    def _augmentation_fn(self, image, boxes):
         # there are a lot of hyperparameters here,
         # you will need to tune them all, haha
 
-        image, boxes, labels = random_image_crop(
-            image, boxes, labels, probability=0.5,
+        image, boxes = random_image_crop(
+            image, boxes, probability=0.5,
             min_object_covered=0.0,
-            aspect_ratio_range=(0.85, 1.15),
-            area_range=(0.333, 0.9),
-            overlap_thresh=0.3
+            aspect_ratio_range=(0.95, 1.05),
+            area_range=(0.5, 0.9),
+            overlap_thresh=0.5
         )
         image = tf.image.resize_images(
             image, [self.image_height, self.image_width],
@@ -160,9 +154,9 @@ class Pipeline:
         )
         # if you do color augmentations before resizing, it will be very slow!
 
-        image = random_color_manipulations(image, probability=0.25, grayscale_probability=0.05)
-        image = random_pixel_value_scale(image, minval=0.85, maxval=1.15, probability=0.25)
+        image = random_color_manipulations(image, probability=0.2, grayscale_probability=0.05)
+        image = random_pixel_value_scale(image, minval=0.85, maxval=1.15, probability=0.2)
         boxes = random_jitter_boxes(boxes, ratio=0.01)
-        image = random_black_patches(image, max_patches=10, probability=0.5, size_to_image_ratio=0.1)
+        image = random_black_patches(image, max_patches=10, probability=0.2, size_to_image_ratio=0.1)
         image, boxes = random_flip_left_right(image, boxes)
-        return image, boxes, labels
+        return image, boxes

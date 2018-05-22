@@ -76,7 +76,8 @@ class Detector:
             # shape [batch_size, num_anchors]
 
             # we have binary classification for each anchor
-            cls_targets = weights
+            cls_targets = tf.to_int32(is_matched)
+            cls_targets = tf.one_hot(cls_targets, depth=2, axis=2, dtype=tf.float32)
 
             with tf.name_scope('classification_loss'):
                 cls_losses = classification_loss(

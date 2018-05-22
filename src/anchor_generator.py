@@ -1,6 +1,6 @@
 import tensorflow as tf
 import math
-from utils.box_utils import to_minmax_coordinates
+from src.utils.box_utils import to_minmax_coordinates
 
 
 ANCHOR_SPECIFICATIONS = [

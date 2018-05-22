@@ -72,7 +72,7 @@ def inception_module(x, scope):
     # path 1
     x1 = slim.conv2d(x, 32, (1, 1), scope=scope + '/conv_1x1_path1')
     # path 2
-    y = slim.max_pool2d(x, (3, 3), stride=1, scope=scope + '/pool_3x3_path2')
+    y = slim.max_pool2d(x, (3, 3), stride=1, padding='SAME', scope=scope + '/pool_3x3_path2')
     x2 = slim.conv2d(y, 32, (1, 1), scope=scope + '/conv_1x1_path2')
     # path 3
     y = slim.conv2d(x, 24, (1, 1), scope=scope + '/conv_1x1_path3')
@@ -80,5 +80,5 @@ def inception_module(x, scope):
     # path 4
     y = slim.conv2d(x, 24, (1, 1), scope=scope + '/conv_1x1_path4')
     y = slim.conv2d(y, 32, (3, 3), scope=scope + '/conv_3x3_path4')
-    x4 = slim.conv2d(y, 32, (3, 3), scope=scope + '/conv_3x3_path4')
-    return tf.concat([x1, x2, x3, x4], axis=1)
+    x4 = slim.conv2d(y, 32, (3, 3), scope=scope + '/conv_3x3_second_path4')
+    return tf.concat([x1, x2, x3, x4], axis=1, name=scope + '/concat')

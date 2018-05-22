@@ -3,28 +3,27 @@ from src.utils import area, intersection
 
 
 def random_image_crop(
-        image, boxes, labels, probability=0.5,
+        image, boxes, probability=0.5,
         min_object_covered=0.9,
         aspect_ratio_range=(0.75, 1.33),
         area_range=(0.5, 1.0),
         overlap_thresh=0.3):
 
-    def crop(image, boxes, labels):
-        image, boxes, keep_ids = _random_crop_image(
+    def crop(image, boxes):
+        image, boxes, _ = _random_crop_image(
             image, boxes, min_object_covered,
             aspect_ratio_range,
             area_range, overlap_thresh
         )
-        labels = tf.gather(labels, keep_ids)
-        return image, boxes, labels
+        return image, boxes
 
     do_it = tf.less(tf.random_uniform([]), probability)
-    image, boxes, labels = tf.cond(
+    image, boxes = tf.cond(
         do_it,
-        lambda: crop(image, boxes, labels),
-        lambda: (image, boxes, labels)
+        lambda: crop(image, boxes),
+        lambda: (image, boxes)
     )
-    return image, boxes, labels
+    return image, boxes
 
 
 def _random_crop_image(
@@ -56,7 +55,7 @@ def _random_crop_image(
         image: cropped image.
         boxes: remaining boxes.
         keep_ids: indices of remaining boxes in input boxes tensor.
-            They are used to get a slice from the 'labels' tensor.
+            They are used to get a slice from the 'labels' tensor (if you have one).
             len(keep_ids) = len(boxes).
     """
     with tf.name_scope('random_crop_image'):

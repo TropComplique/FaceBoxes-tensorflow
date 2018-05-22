@@ -20,10 +20,10 @@ CYCLE_LENGTH = 512
 BLOCK_LENGTH = 4
 
 # images are resized before feeding them to the network
-RESIZE_METHOD = tf.image.ResizeMethod.NEAREST_NEIGHBOR
+RESIZE_METHOD = tf.image.ResizeMethod.BILINEAR
 
 # threshold for IoU when creating training targets
-MATCHING_THRESHOLD = 0.5
+MATCHING_THRESHOLD = 0.35
 
 # this is used in tf.map_fn when creating training targets or doing NMS
 PARALLEL_ITERATIONS = 8
