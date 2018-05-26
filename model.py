@@ -61,7 +61,7 @@ def model_fn(features, labels, mode, params, config):
         assert batch_size == 1
 
         with tf.name_scope('evaluator'):
-            evaluator = Evaluator(num_classes=1)
+            evaluator = Evaluator()
             eval_metric_ops = evaluator.get_metric_ops(filenames, labels, predictions)
 
         return tf.estimator.EstimatorSpec(

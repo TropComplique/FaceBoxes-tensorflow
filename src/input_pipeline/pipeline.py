@@ -1,7 +1,6 @@
 import tensorflow as tf
 
-from src.constants import SHUFFLE_BUFFER_SIZE, NUM_THREADS, RESIZE_METHOD,\
-    CYCLE_LENGTH, BLOCK_LENGTH
+from src.constants import SHUFFLE_BUFFER_SIZE, NUM_THREADS, RESIZE_METHOD
 from src.input_pipeline.random_image_crop import random_image_crop
 from src.input_pipeline.other_augmentations import random_color_manipulations,\
     random_flip_left_right, random_pixel_value_scale, random_jitter_boxes,\
@@ -46,13 +45,7 @@ class Pipeline:
         if shuffle:
             dataset = dataset.shuffle(buffer_size=num_shards)
 
-        # you cannot set cycle_length too high
-        cycle_length = min(CYCLE_LENGTH, num_shards)
-
-        dataset = dataset.interleave(
-            lambda filename: tf.data.TFRecordDataset(filename),
-            cycle_length=cycle_length, block_length=BLOCK_LENGTH
-        )
+        dataset = dataset.flat_map(tf.data.TFRecordDataset)
         dataset = dataset.prefetch(buffer_size=batch_size)
 
         if shuffle:
@@ -144,7 +137,7 @@ class Pipeline:
         image, boxes = random_image_crop(
             image, boxes, probability=0.5,
             min_object_covered=0.0,
-            aspect_ratio_range=(0.95, 1.05),
+            aspect_ratio_range=(0.97, 1.02),
             area_range=(0.5, 0.9),
             overlap_thresh=0.5
         )

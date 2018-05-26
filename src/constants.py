@@ -16,8 +16,6 @@ SHUFFLE_BUFFER_SIZE = 4000
 NUM_THREADS = 8
 # read here about the buffer sizes:
 # stackoverflow.com/questions/46444018/meaning-of-buffer-size-in-dataset-map-dataset-prefetch-and-dataset-shuffle
-CYCLE_LENGTH = 512
-BLOCK_LENGTH = 4
 
 # images are resized before feeding them to the network
 RESIZE_METHOD = tf.image.ResizeMethod.BILINEAR

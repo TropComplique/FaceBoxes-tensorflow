@@ -31,20 +31,14 @@ class Box:
 
 
 class Evaluator:
-    def __init__(self, num_classes):
-        self.num_classes = num_classes
-        assert num_classes > 0
+    def __init__(self):
         self._initialize()
 
     def evaluate(self, iou_threshold=0.5):
-        metrics = {}
-        for label in range(self.num_classes):
-            metrics[label] = evaluate_detector(
-                self.groundtruth_by_label_by_image[label],
-                self.detections_by_label[label], iou_threshold
-            )
-        metrics['mAP'] = np.mean([metrics[label]['AP'] for label in range(self.num_classes)])
-        self.metrics = metrics
+        self.metrics = evaluate_detector(
+            self.groundtruth_by_image[label],
+            self.detections, iou_threshold
+        )
 
     def clear(self):
         self._initialize()
@@ -55,22 +49,20 @@ class Evaluator:
             image_name: a string tensor with shape [1].
             groundtruth: a dict with the following keys
                 'boxes': a float tensor with shape [1, max_num_boxes, 4].
-                'labels': an int tensor with shape [1, max_num_boxes].
                 'num_boxes': an int tensor with shape [1].
             predictions: a dict with the following keys
                 'boxes': a float tensor with shape [1, max_num_boxes, 4].
-                'labels': an int tensor with shape [1, max_num_boxes].
                 'scores': a float tensor with shape [1, max_num_boxes].
                 'num_boxes': an int tensor with shape [1].
         """
 
-        def update_op_func(image_name, gt_boxes, gt_labels, gt_num_boxes, boxes, labels, scores, num_boxes):
-            self.add_groundtruth(image_name, gt_boxes, gt_labels, gt_num_boxes)
-            self.add_detections(image_name, boxes, labels, scores, num_boxes)
+        def update_op_func(image_name, gt_boxes, gt_num_boxes, boxes, scores, num_boxes):
+            self.add_groundtruth(image_name, gt_boxes, gt_num_boxes)
+            self.add_detections(image_name, boxes, scores, num_boxes)
 
         tensors = [
-            image_name[0], groundtruth['boxes'][0], groundtruth['labels'][0], groundtruth['num_boxes'][0],
-            predictions['boxes'][0], predictions['labels'][0], predictions['scores'][0], predictions['num_boxes'][0]
+            image_name[0], groundtruth['boxes'][0], groundtruth['num_boxes'][0],
+            predictions['boxes'][0], predictions['scores'][0], predictions['num_boxes'][0]
         ]
         update_op = tf.py_func(update_op_func, tensors, [], stateful=True)
 
@@ -79,51 +71,44 @@ class Evaluator:
             self.clear()
         evaluate_op = tf.py_func(evaluate_func, [], [])
 
-        def get_value_func(label, measure):
+        def get_value_func(measure):
             def value_func():
-                return np.float32(self.metrics[label][measure])
+                return np.float32(self.metrics[measure])
             return value_func
 
         with tf.control_dependencies([evaluate_op]):
 
             metric_names = ['AP', 'precision', 'recall', 'mean_iou', 'threshold', 'FP', 'FN']
             eval_metric_ops = {
-                'metrics/' + measure + '_for_label_' + str(label):
-                (tf.py_func(get_value_func(label, measure), [], tf.float32), update_op)
-                for label in range(self.num_classes) for measure in metric_names
+                'metrics/' + measure:
+                (tf.py_func(get_value_func(measure), [], tf.float32), update_op)
+                for measure in metric_names
             }
-
-            def get_map_func():
-                return np.float32(self.metrics['mAP'])
-            eval_metric_ops['metrics/mAP'] = (tf.py_func(get_map_func, [], tf.float32), update_op)
 
         return eval_metric_ops
 
     def _initialize(self):
-        self.detections_by_label = {label: [] for label in range(self.num_classes)}
-        self.groundtruth_by_label_by_image = {label: {} for label in range(self.num_classes)}
+        self.detections = []
+        self.groundtruth_by_image = {}
 
-    def add_detections(self, image_name, boxes, labels, scores, num_boxes):
+    def add_detections(self, image_name, boxes, scores, num_boxes):
         """
         Arguments:
             images: a numpy string array with shape [].
             boxes: a numpy float array with shape [N, 4].
-            labels: a numpy int array with shape [N].
             scores: a numpy float array with shape [N].
             num_boxes: a numpy int array with shape [].
         """
-        boxes, labels, scores = boxes[:num_boxes], labels[:num_boxes], scores[:num_boxes]
-        for box, label, score in zip(boxes, labels, scores):
-            self.detections_by_label[label] += [Box(image_name, box, score)]
+        boxes, scores = boxes[:num_boxes], scores[:num_boxes]
+        for box, score in zip(boxes, scores):
+            self.detections.append(Box(image_name, box, score))
 
-    def add_groundtruth(self, image_name, boxes, labels, num_boxes):
-        boxes, labels = boxes[:num_boxes], labels[:num_boxes]
-        for box, label in zip(boxes, labels):
-            groundtruth_by_image = self.groundtruth_by_label_by_image[label]
-            if image_name in groundtruth_by_image:
-                groundtruth_by_image[image_name] += [Box(image_name, box)]
+    def add_groundtruth(self, image_name, boxes, num_boxes):
+        for box in boxes[:num_boxes]:
+            if image_name in self.groundtruth_by_image:
+                self.groundtruth_by_image[image_name] += [Box(image_name, box)]
             else:
-                groundtruth_by_image[image_name] = [Box(image_name, box)]
+                self.groundtruth_by_image[image_name] = [Box(image_name, box)]
 
 
 def evaluate_detector(groundtruth_by_img, all_detections, iou_threshold=0.5):
