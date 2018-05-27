@@ -20,7 +20,7 @@ class Pipeline:
             image_size: a list with two integers [width, height] or None,
                 images of this size will be in a batch.
                 If value is None then images will not be resized.
-                In this case batch_size must be 1.
+                In this case batch size must be 1.
             repeat: a boolean, whether repeat indefinitely.
             shuffle: whether to shuffle the dataset.
             augmentation: whether to do data augmentation.
@@ -32,7 +32,7 @@ class Pipeline:
             assert batch_size == 1
             self.image_width, self.image_height = None, None
             self.resize = False
- 
+
         self.augmentation = augmentation
         self.batch_size = batch_size
 

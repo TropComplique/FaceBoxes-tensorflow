@@ -88,18 +88,6 @@ def model_fn(features, labels, mode, params, config):
     return tf.estimator.EstimatorSpec(mode, loss=total_loss, train_op=train_op)
 
 
-class IteratorInitializerHook(tf.train.SessionRunHook):
-    """Hook to initialise data iterator after Session is created."""
-
-    def __init__(self):
-        super(IteratorInitializerHook, self).__init__()
-        self.iterator_initializer_func = None
-
-    def after_create_session(self, session, coord):
-        """Initialise the iterator after the session has been created."""
-        self.iterator_initializer_func(session)
-
-
 def add_weight_decay(weight_decay):
     """Add L2 regularization to all (or some) trainable kernel weights."""
     weight_decay = tf.constant(

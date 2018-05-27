@@ -10,12 +10,15 @@ CONFIG = 'config.json'
 OUTPUT_FOLDER = 'export/run00'
 GPU_TO_USE = '1'
 
+WIDTH, HEIGHT = 1024, 1024
+# size of an input image,
+# set (None, None) if you want inference
+# for images of variable size
+
 
 tf.logging.set_verbosity('INFO')
 params = json.load(open(CONFIG))
 model_params = params['model_params']
-input_pipeline_params = params['input_pipeline_params']
-width, height = input_pipeline_params['image_size']
 
 config = tf.ConfigProto()
 config.gpu_options.visible_device_list = GPU_TO_USE
@@ -28,7 +31,7 @@ estimator = tf.estimator.Estimator(model_fn, params=model_params, config=run_con
 
 
 def serving_input_receiver_fn():
-    images = tf.placeholder(dtype=tf.uint8, shape=[None, None, None, 3], name='image_tensor')
+    images = tf.placeholder(dtype=tf.uint8, shape=[None, HEIGHT, WIDTH, 3], name='image_tensor')
     features = {'images': tf.transpose(tf.to_float(images)*(1.0/255.0), perm=[0, 3, 1, 2])}
     return tf.estimator.export.ServingInputReceiver(features, {'images': images})
 

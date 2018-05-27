@@ -79,6 +79,8 @@ def apply_hard_mining(
     decoded_boxes.set_shape([batch_size, num_anchors, 4])
     location_losses.set_shape([batch_size, num_anchors])
     cls_losses.set_shape([batch_size, num_anchors])
+    # all `set_shape` above are dirty tricks,
+    # without them shape information is lost for some reason
 
     # all these tensors must have static first dimension (batch size)
     decoded_boxes_list = tf.unstack(decoded_boxes, axis=0)

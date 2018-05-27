@@ -16,11 +16,11 @@ def get_training_targets(anchors, groundtruth_boxes, threshold=0.5):
     with tf.name_scope('matching'):
         N = tf.shape(groundtruth_boxes)[0]
         num_anchors = tf.shape(anchors)[0]
-        dm = tf.fill([num_anchors], -1)
+        no_match_tensor = tf.fill([num_anchors], -1)
         matches = tf.cond(
             tf.greater(N, 0),
             lambda: _match(anchors, groundtruth_boxes, threshold),
-            lambda: dm#tf.fill([num_anchors], -1)
+            lambda: no_match_tensor
         )
         matches = tf.to_int32(matches)
 
@@ -90,8 +90,6 @@ def _create_targets(anchors, groundtruth_boxes, matches):
     Returns:
         reg_targets: a float tensor with shape [num_anchors, 4].
     """
-    num_anchors = tf.shape(anchors)[0]
-
     matched_anchor_indices = tf.where(tf.greater_equal(matches, 0))  # shape [num_matches, 1]
     matched_anchor_indices = tf.squeeze(matched_anchor_indices, axis=1)
     matched_gt_indices = tf.gather(matches, matched_anchor_indices)  # shape [num_matches]

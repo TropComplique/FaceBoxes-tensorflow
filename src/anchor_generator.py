@@ -49,7 +49,7 @@ class AnchorGenerator:
         """
         feature_map_shape_list = []
         for feature_map in image_features:
-            
+
             height_i, width_i = feature_map.shape.as_list()[2:]
             if height_i is None or width_i is None:
                 height_i, width_i = tf.shape(feature_map)[2], tf.shape(feature_map)[3]

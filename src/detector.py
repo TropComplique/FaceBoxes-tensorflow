@@ -19,7 +19,7 @@ class Detector:
         """
         feature_maps = feature_extractor(images)
         self.is_training = feature_extractor.is_training
-        
+
         # sometimes images will be of different sizes,
         # so i need use dynamic shape
         h, w = images.shape.as_list()[2:]
@@ -108,7 +108,7 @@ class Detector:
             self._add_scalewise_summaries(cls_losses, name='classification_losses')
             self._add_scalewise_summaries(location_losses, name='localization_losses')
             tf.summary.scalar('total_mean_matches_per_image', tf.reduce_mean(matches_per_image))
-                
+
             with tf.name_scope('ohem'):
                 location_loss, cls_loss = apply_hard_mining(
                     location_losses, cls_losses,
@@ -134,10 +134,8 @@ class Detector:
         """
         index = 0
         for i, n in enumerate(self.num_anchors_per_feature_map):
-
             k = tf.ceil(tf.to_float(n) * 0.20)  # top 20%
             k = tf.to_int32(k)
-
             biggest_values, _ = tf.nn.top_k(tensor[:, index:(index + n)], k, sorted=False)
             # it has shape [batch_size, k]
             tf.summary.histogram(
@@ -242,6 +240,6 @@ class Detector:
                 y = tf.transpose(y, perm=[0, 2, 3, 1])
                 y = tf.reshape(y, [batch_size, height_i, width_i, num_predictions_per_location, 2])
                 class_predictions_with_background[i] = tf.reshape(y, tf.stack([batch_size, num_anchors_on_feature_map, 2]))
-            
+
             self.box_encodings = tf.concat(box_encodings, axis=1)
             self.class_predictions_with_background = tf.concat(class_predictions_with_background, axis=1)

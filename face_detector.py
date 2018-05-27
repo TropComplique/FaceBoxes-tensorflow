@@ -31,9 +31,9 @@ class FaceDetector:
         )
         config_proto = tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False)
         self.sess = tf.Session(graph=graph, config=config_proto)
-            
+
     def __call__(self, image):
-        """Detect face and facial landmarks.
+        """Detect faces.
 
         Arguments:
             image: a numpy uint8 array with shape [height, width, 3],
