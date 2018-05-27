@@ -36,7 +36,7 @@ class Evaluator:
 
     def evaluate(self, iou_threshold=0.5):
         self.metrics = evaluate_detector(
-            self.groundtruth_by_image[label],
+            self.groundtruth_by_image,
             self.detections, iou_threshold
         )
 

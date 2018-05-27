@@ -2,4 +2,6 @@
 __pycache__
 data/
 models/
+export/
+*.pb
 

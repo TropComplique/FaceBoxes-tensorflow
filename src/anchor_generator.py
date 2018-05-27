@@ -8,7 +8,7 @@ ANCHOR_SPECIFICATIONS = [
     [(256, 1.0, 1)],  # scale 1
     [(512, 1.0, 1)],  # scale 2
 ]
-# every tuple represents (scale, aspect ratio, densification parameter)
+# every tuple represents (box scale, aspect ratio, densification parameter)
 
 """
 Notes:
@@ -42,15 +42,18 @@ class AnchorGenerator:
         Arguments:
             image_features: a list of float tensors where the ith tensor
                 has shape [batch, channels_i, height_i, width_i].
-            image_size: a tuple of integers (width, height).
+            image_size: a tuple of integers (int tensors with shape []) (width, height).
         Returns:
             a float tensor with shape [num_anchor, 4],
             boxes with normalized coordinates (and clipped to the unit square).
         """
         feature_map_shape_list = []
-        num_layers = len(image_features)
         for feature_map in image_features:
+            
             height_i, width_i = feature_map.shape.as_list()[2:]
+            if height_i is None or width_i is None:
+                height_i, width_i = tf.shape(feature_map)[2], tf.shape(feature_map)[3]
+
             feature_map_shape_list.append((height_i, width_i))
         image_width, image_height = image_size
 
@@ -113,8 +116,8 @@ def tile_anchors(
 
     # to [0, 1] range
     image_width, image_height = image_size
-    height = unnormalized_height/image_height
-    width = unnormalized_width/image_width
+    height = unnormalized_height/tf.to_float(image_height)
+    width = unnormalized_width/tf.to_float(image_width)
     # (sometimes it could be outside the range, but we clip it)
 
     boxes = generate_anchors_at_upper_left_corner(height, width, anchor_offset, n)

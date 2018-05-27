@@ -3,7 +3,7 @@
     "model_dir": "models/run00",
 
     "weight_decay": 5e-4,
-    "score_threshold": 0.1, "iou_threshold": 0.6, "max_boxes": 120,
+    "score_threshold": 0.1, "iou_threshold": 0.3, "max_boxes": 200,
 
     "localization_loss_weight": 1.0, "classification_loss_weight": 1.0,
 
@@ -13,7 +13,7 @@
     "max_negatives_per_positive": 3.0, "min_negatives_per_image": 10,
 
     "lr_boundaries": [160000, 200000],
-    "lr_values": [0.002, 0.0002, 0.00002]
+    "lr_values": [0.008, 0.0008, 0.00008]
   },
 
   "input_pipeline_params": {

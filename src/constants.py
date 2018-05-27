@@ -12,7 +12,7 @@ SCALE_FACTORS = [10.0, 10.0, 5.0, 5.0]
 # here are input pipeline settings.
 # you need to tweak these numbers for your system,
 # it can accelerate training
-SHUFFLE_BUFFER_SIZE = 4000
+SHUFFLE_BUFFER_SIZE = 10000
 NUM_THREADS = 8
 # read here about the buffer sizes:
 # stackoverflow.com/questions/46444018/meaning-of-buffer-size-in-dataset-map-dataset-prefetch-and-dataset-shuffle
@@ -27,4 +27,4 @@ MATCHING_THRESHOLD = 0.35
 PARALLEL_ITERATIONS = 8
 
 # this can be important
-BATCH_NORM_MOMENTUM = 0.93
+BATCH_NORM_MOMENTUM = 0.91

@@ -3,8 +3,7 @@ import tensorflow as tf
 from src.constants import SHUFFLE_BUFFER_SIZE, NUM_THREADS, RESIZE_METHOD
 from src.input_pipeline.random_image_crop import random_image_crop
 from src.input_pipeline.other_augmentations import random_color_manipulations,\
-    random_flip_left_right, random_pixel_value_scale, random_jitter_boxes,\
-    random_black_patches
+    random_flip_left_right, random_pixel_value_scale, random_jitter_boxes
 
 
 class Pipeline:
@@ -18,13 +17,22 @@ class Pipeline:
         Arguments:
             filenames: a list of strings, paths to tfrecords files.
             batch_size: an integer.
-            image_size: a list with two integers [width, height],
+            image_size: a list with two integers [width, height] or None,
                 images of this size will be in a batch.
+                If value is None then images will not be resized.
+                In this case batch_size must be 1.
             repeat: a boolean, whether repeat indefinitely.
             shuffle: whether to shuffle the dataset.
             augmentation: whether to do data augmentation.
         """
-        self.image_width, self.image_height = image_size
+        if image_size is not None:
+            self.image_width, self.image_height = image_size
+            self.resize = True
+        else:
+            assert batch_size == 1
+            self.image_width, self.image_height = None, None
+            self.resize = False
+ 
         self.augmentation = augmentation
         self.batch_size = batch_size
 
@@ -60,11 +68,7 @@ class Pipeline:
         )
         dataset = dataset.prefetch(buffer_size=1)
 
-        self.iterator = tf.data.Iterator.from_structure(
-            dataset.output_types,
-            dataset.output_shapes
-        )
-        self.init = self.iterator.make_initializer(dataset)
+        self.iterator = dataset.make_one_shot_iterator()
 
     def get_batch(self):
         """
@@ -115,6 +119,7 @@ class Pipeline:
             parsed_features['ymax'], parsed_features['xmax']
         ], axis=1)
         boxes = tf.to_float(boxes)
+        # it is important to clip here!
         boxes = tf.clip_by_value(boxes, clip_value_min=0.0, clip_value_max=1.0)
 
         if self.augmentation:
@@ -123,7 +128,7 @@ class Pipeline:
             image = tf.image.resize_images(
                 image, [self.image_height, self.image_width],
                 method=RESIZE_METHOD
-            )
+            ) if self.resize else image
 
         image = tf.transpose(image, perm=[2, 0, 1])  # to NCHW format
         num_boxes = tf.to_int32(tf.shape(boxes)[0])
@@ -135,21 +140,20 @@ class Pipeline:
         # you will need to tune them all, haha
 
         image, boxes = random_image_crop(
-            image, boxes, probability=0.5,
+            image, boxes, probability=0.9,
             min_object_covered=0.0,
-            aspect_ratio_range=(0.97, 1.02),
-            area_range=(0.5, 0.9),
-            overlap_thresh=0.5
+            aspect_ratio_range=(0.95, 1.05),
+            area_range=(0.5, 0.95),
+            overlap_thresh=0.4
         )
         image = tf.image.resize_images(
             image, [self.image_height, self.image_width],
             method=RESIZE_METHOD
-        )
+        ) if self.resize else image
         # if you do color augmentations before resizing, it will be very slow!
 
-        image = random_color_manipulations(image, probability=0.2, grayscale_probability=0.05)
-        image = random_pixel_value_scale(image, minval=0.85, maxval=1.15, probability=0.2)
+        image = random_color_manipulations(image, probability=0.15, grayscale_probability=0.05)
+        image = random_pixel_value_scale(image, minval=0.85, maxval=1.15, probability=0.15)
         boxes = random_jitter_boxes(boxes, ratio=0.01)
-        image = random_black_patches(image, max_patches=10, probability=0.2, size_to_image_ratio=0.1)
         image, boxes = random_flip_left_right(image, boxes)
         return image, boxes

@@ -19,8 +19,13 @@ class Detector:
         """
         feature_maps = feature_extractor(images)
         self.is_training = feature_extractor.is_training
-
+        
+        # sometimes images will be of different sizes,
+        # so i need use dynamic shape
         h, w = images.shape.as_list()[2:]
+        if h is None or w is None:
+            h, w = tf.shape(images)[2], tf.shape(images)[3]
+
         self.anchors = anchor_generator(feature_maps, image_size=(w, h))
         self.num_anchors_per_location = anchor_generator.num_anchors_per_location
         self.num_anchors_per_feature_map = anchor_generator.num_anchors_per_feature_map
@@ -40,12 +45,15 @@ class Detector:
         with tf.name_scope('postprocessing'):
             boxes = batch_decode(self.box_encodings, self.anchors)
             # it has shape [batch_size, num_anchors, 4]
+
+            class_predictions_with_background = tf.nn.softmax(
+                self.class_predictions_with_background, axis=2
+            )
             class_predictions_without_background = tf.slice(
-                self.class_predictions_with_background,
+                class_predictions_with_background,
                 [0, 0, 1], [-1, -1, -1]
             )
-            scores = tf.sigmoid(class_predictions_without_background)
-            scores = tf.squeeze(scores, axis=2)
+            scores = tf.squeeze(class_predictions_without_background, axis=2)
             # it has shape [batch_size, num_anchors]
 
         with tf.device('/cpu:0'), tf.name_scope('nms'):
@@ -100,7 +108,7 @@ class Detector:
             self._add_scalewise_summaries(cls_losses, name='classification_losses')
             self._add_scalewise_summaries(location_losses, name='localization_losses')
             tf.summary.scalar('total_mean_matches_per_image', tf.reduce_mean(matches_per_image))
-
+                
             with tf.name_scope('ohem'):
                 location_loss, cls_loss = apply_hard_mining(
                     location_losses, cls_losses,
@@ -126,7 +134,10 @@ class Detector:
         """
         index = 0
         for i, n in enumerate(self.num_anchors_per_feature_map):
-            k = math.ceil(n * 0.20)  # top 20%
+
+            k = tf.ceil(tf.to_float(n) * 0.20)  # top 20%
+            k = tf.to_int32(k)
+
             biggest_values, _ = tf.nn.top_k(tensor[:, index:(index + n)], k, sorted=False)
             # it has shape [batch_size, k]
             tf.summary.histogram(
@@ -197,16 +208,16 @@ class Detector:
 
                 y = slim.conv2d(
                     x, num_predictions_per_location * 4,
-                    [1, 1], activation_fn=None, scope='box_encoding_predictor_%d' % i,
-                    data_format='NCHW'
+                    [3, 3], activation_fn=None, scope='box_encoding_predictor_%d' % i,
+                    data_format='NCHW', padding='SAME'
                 )
                 # it has shape [batch_size, num_predictions_per_location * 4, height_i, width_i]
                 box_encodings.append(y)
 
                 y = slim.conv2d(
                     x, num_predictions_per_location * 2,
-                    [1, 1], activation_fn=None, scope='class_predictor_%d' % i,
-                    data_format='NCHW'
+                    [3, 3], activation_fn=None, scope='class_predictor_%d' % i,
+                    data_format='NCHW', padding='SAME'
                 )
                 # it has  shape [batch_size, num_predictions_per_location * 2, height_i, width_i]
                 class_predictions_with_background.append(y)
@@ -218,18 +229,19 @@ class Detector:
                 x = feature_maps[i]
                 num_predictions_per_location = num_anchors_per_location[i]
                 batch_size = tf.shape(x)[0]
-                height_i, width_i = x.shape.as_list()[2:]
+                height_i = tf.shape(x)[2]
+                width_i = tf.shape(x)[3]
                 num_anchors_on_feature_map = height_i * width_i * num_predictions_per_location
 
                 y = box_encodings[i]
                 y = tf.transpose(y, perm=[0, 2, 3, 1])
-                y = tf.reshape(y, [batch_size, height_i, width_i, num_predictions_per_location, 4])
+                y = tf.reshape(y, tf.stack([batch_size, height_i, width_i, num_predictions_per_location, 4]))
                 box_encodings[i] = tf.reshape(y, [batch_size, num_anchors_on_feature_map, 4])
 
                 y = class_predictions_with_background[i]
                 y = tf.transpose(y, perm=[0, 2, 3, 1])
                 y = tf.reshape(y, [batch_size, height_i, width_i, num_predictions_per_location, 2])
-                class_predictions_with_background[i] = tf.reshape(y, [batch_size, num_anchors_on_feature_map, 2])
-
+                class_predictions_with_background[i] = tf.reshape(y, tf.stack([batch_size, num_anchors_on_feature_map, 2]))
+            
             self.box_encodings = tf.concat(box_encodings, axis=1)
             self.class_predictions_with_background = tf.concat(class_predictions_with_background, axis=1)

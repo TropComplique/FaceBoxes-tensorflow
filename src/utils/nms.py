@@ -30,15 +30,16 @@ def batch_non_max_suppression(
         selected_indices = tf.image.non_max_suppression(
             boxes, scores, max_boxes, iou_threshold
         )
+        boxes = tf.gather(boxes, selected_indices)
+        scores = tf.gather(scores, selected_indices)
         num_boxes = tf.to_int32(tf.shape(boxes)[0])
-        max_detections = max_boxes
 
-        zero_padding = max_detections - num_boxes
+        zero_padding = max_boxes - num_boxes
         boxes = tf.pad(boxes, [[0, zero_padding], [0, 0]])
         scores = tf.pad(scores, [[0, zero_padding]])
 
-        boxes.set_shape([max_detections, 4])
-        scores.set_shape([max_detections])
+        boxes.set_shape([max_boxes, 4])
+        scores.set_shape([max_boxes])
         return boxes, scores, num_boxes
 
     boxes, scores, num_detections = tf.map_fn(

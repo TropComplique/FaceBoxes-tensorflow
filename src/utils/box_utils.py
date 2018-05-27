@@ -177,7 +177,7 @@ def batch_decode(box_encodings, anchors):
         It contains the decoded boxes.
     """
     batch_size = tf.shape(box_encodings)[0]
-    num_anchors = box_encodings.shape[1]
+    num_anchors = tf.shape(box_encodings)[1]
 
     tiled_anchor_boxes = tf.tile(
         tf.expand_dims(anchors, 0),
@@ -190,7 +190,7 @@ def batch_decode(box_encodings, anchors):
 
     decoded_boxes = tf.reshape(
         decoded_boxes,
-        tf.stack([batch_size, num_anchors, 4])
+        [batch_size, num_anchors, 4]
     )
     decoded_boxes = tf.clip_by_value(decoded_boxes, 0.0, 1.0)
     return decoded_boxes

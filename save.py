@@ -8,7 +8,7 @@ from model import model_fn
 
 CONFIG = 'config.json'
 OUTPUT_FOLDER = 'export/run00'
-GPU_TO_USE = '0'
+GPU_TO_USE = '1'
 
 
 tf.logging.set_verbosity('INFO')
@@ -28,7 +28,7 @@ estimator = tf.estimator.Estimator(model_fn, params=model_params, config=run_con
 
 
 def serving_input_receiver_fn():
-    images = tf.placeholder(dtype=tf.uint8, shape=[None, height, width, 3], name='image_tensor')
+    images = tf.placeholder(dtype=tf.uint8, shape=[None, None, None, 3], name='image_tensor')
     features = {'images': tf.transpose(tf.to_float(images)*(1.0/255.0), perm=[0, 3, 1, 2])}
     return tf.estimator.export.ServingInputReceiver(features, {'images': images})
 

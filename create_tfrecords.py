@@ -86,7 +86,7 @@ def dict_to_tf_example(annotation, image_dir):
         b = float(obj['bndbox']['xmin'])/width
         c = float(obj['bndbox']['ymax'])/height
         d = float(obj['bndbox']['xmax'])/width
-        assert (a < c) and (b < d), annotation_name + str(a) +'_' +str(c) +'_'  +str(b) + '_' +str(d)
+        assert (a < c) and (b < d)
         ymin.append(a)
         xmin.append(b)
         ymax.append(c)
