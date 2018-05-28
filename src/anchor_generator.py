@@ -70,14 +70,21 @@ class AnchorGenerator:
                 h, w = grid_size
                 stride = (1.0/tf.to_float(h), 1.0/tf.to_float(w))
                 offset = (0.5/tf.to_float(h), 0.5/tf.to_float(w))
-
+                
+                local_anchors = []
                 for scale, aspect_ratio, n in box_spec:
-                    anchor_grid_list.append(tile_anchors(
+                    local_anchors.append(tile_anchors(
                         image_size=(image_width, image_height),
                         grid_height=h, grid_width=w, scale=scale,
                         aspect_ratio=aspect_ratio, anchor_stride=stride,
                         anchor_offset=offset, n=n
                     ))
+
+                # reshaping in the right order is important
+                local_anchors = tf.concat(local_anchors, axis=2)
+                local_anchors = tf.reshape(local_anchors, [-1, 4])
+                anchor_grid_list.append(local_anchors)
+
                 num_anchors_per_feature_map.append(h * w * sum(n*n for _, _, n in box_spec))
 
         # constant tensors, anchors for each feature map
@@ -108,7 +115,7 @@ def tile_anchors(
             center of the anchor on upper left element of the grid ((0, 0)-th anchor).
         n: an integer, densification parameter.
     Returns:
-        a float tensor with shape [n * n * grid_height * grid_width, 4].
+        a float tensor with shape [grid_height, grid_width, n*n, 4].
     """
     ratio_sqrt = tf.sqrt(aspect_ratio)
     unnormalized_height = scale / ratio_sqrt
@@ -136,7 +143,6 @@ def tile_anchors(
 
     boxes = tf.reshape(boxes, [1, 1, n*n, 4])
     boxes = boxes + translations  # shape [grid_height, grid_width, n*n, 4]
-    boxes = tf.reshape(boxes, [-1, 4])
     return boxes
 
 
