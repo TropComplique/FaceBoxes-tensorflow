@@ -10,7 +10,7 @@ CONFIG = 'config.json'
 OUTPUT_FOLDER = 'export/run00'
 GPU_TO_USE = '1'
 
-WIDTH, HEIGHT = 1024, 1024
+WIDTH, HEIGHT = None, None
 # size of an input image,
 # set (None, None) if you want inference
 # for images of variable size

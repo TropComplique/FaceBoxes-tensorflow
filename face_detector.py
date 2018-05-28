@@ -32,12 +32,13 @@ class FaceDetector:
         config_proto = tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False)
         self.sess = tf.Session(graph=graph, config=config_proto)
 
-    def __call__(self, image):
+    def __call__(self, image, score_threshold=0.7):
         """Detect faces.
 
         Arguments:
             image: a numpy uint8 array with shape [height, width, 3],
                 that represents a RGB image.
+            score_threshold: a float number.
         Returns:
             boxes: a float numpy array of shape [num_faces, 4].
             scores: a float numpy array of shape [num_faces].
@@ -51,6 +52,10 @@ class FaceDetector:
         num_boxes = num_boxes[0]
         boxes = boxes[0][:num_boxes]
         scores = scores[0][:num_boxes]
+
+        to_keep = scores > score_threshold
+        boxes = boxes[to_keep]
+        scores = scores[to_keep]
 
         scaler = np.array([h, w, h, w], dtype='float32')
         boxes = boxes * scaler

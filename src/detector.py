@@ -46,11 +46,10 @@ class Detector:
             boxes = batch_decode(self.box_encodings, self.anchors)
             # it has shape [batch_size, num_anchors, 4]
 
-            class_predictions_with_background = tf.nn.softmax(
-                self.class_predictions_with_background, axis=2
-            )
             class_predictions_without_background = tf.slice(
-                class_predictions_with_background,
+                tf.nn.softmax(
+                    self.class_predictions_with_background, axis=2
+                ),
                 [0, 0, 1], [-1, -1, -1]
             )
             scores = tf.squeeze(class_predictions_without_background, axis=2)
@@ -211,11 +210,18 @@ class Detector:
                 )
                 # it has shape [batch_size, num_predictions_per_location * 4, height_i, width_i]
                 box_encodings.append(y)
-
+                
+                import numpy as np
+                biases = np.zeros([num_predictions_per_location, 2], dtype='float32')
+                biases[:, 0] = np.log(0.99)  # background class
+                biases[:, 1] = np.log(0.01)  # object class
+                biases = biases.reshape(num_predictions_per_location * 2)
+        
                 y = slim.conv2d(
                     x, num_predictions_per_location * 2,
                     [3, 3], activation_fn=None, scope='class_predictor_%d' % i,
-                    data_format='NCHW', padding='SAME'
+                    data_format='NCHW', padding='SAME',
+                    biases_initializer=tf.constant_initializer(biases)
                 )
                 # it has  shape [batch_size, num_predictions_per_location * 2, height_i, width_i]
                 class_predictions_with_background.append(y)
