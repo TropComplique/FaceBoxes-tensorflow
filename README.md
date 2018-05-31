@@ -32,3 +32,12 @@ I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but 
 5. Run `tensorboard --logdir=models/run00` to observe training and eval.
 6. Run `python save.py` and `create_pb.py` to convert the trained model into `.pb` file.
 7. Use `class` in `face_detector.py` and `.pb` file to do inference.
+
+## How to evaluate on FDDB
+
+1. Download the evaluation code from [here](http://vis-www.cs.umass.edu/fddb/results.html).
+2. `tar -zxvf evaluation.tgz; cd evaluation`
+3. Run `make`
+4. `./evaluate -a result/ellipseList.txt -d result/detections.txt -i result/images/ -l result/faceList.txt -z .jpg -f 0`
+5. https://github.com/pkdogcom/fddb-evaluate
+

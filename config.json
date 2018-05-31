@@ -1,19 +1,19 @@
 {
   "model_params": {
-    "model_dir": "models/run00",
+    "model_dir": "models/run01",
 
-    "weight_decay": 1e-4,
+    "weight_decay": 5e-4,
     "score_threshold": 0.25, "iou_threshold": 0.3, "max_boxes": 200,
 
-    "localization_loss_weight": 1.0, "classification_loss_weight": 2.0,
+    "localization_loss_weight": 1.0, "classification_loss_weight": 1.0,
 
     "loss_to_use": "classification",
     "loc_loss_weight": 0.0, "cls_loss_weight": 1.0,
-    "num_hard_examples": 3000, "nms_threshold": 0.99,
+    "num_hard_examples": 500, "nms_threshold": 0.99,
     "max_negatives_per_positive": 3.0, "min_negatives_per_image": 30,
 
     "lr_boundaries": [160000, 200000],
-    "lr_values": [0.01, 0.001, 0.0001]
+    "lr_values": [0.004, 0.0004, 0.00004]
   },
 
   "input_pipeline_params": {
