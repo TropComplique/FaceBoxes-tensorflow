@@ -32,21 +32,21 @@ def classification_loss(predictions, targets):
     Arguments:
         predictions: a float tensor with shape [batch_size, num_anchors, num_classes + 1],
             representing the predicted logits for each class.
-        targets: a float tensor with shape [batch_size, num_anchors, num_classes + 1],
-            representing one-hot encoded classification targets.
+        targets: an int tensor with shape [batch_size, num_anchors].
     Returns:
         a float tensor with shape [batch_size, num_anchors].
     """
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-        labels=targets, logits=predictions, dim=2
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        labels=targets, logits=predictions
     )
     return cross_entropy
 
 
 def apply_hard_mining(
         location_losses, cls_losses,
-        class_predictions_with_background, box_encodings, matches,
-        anchors, loss_to_use='classification',
+        class_predictions_with_background,
+        matches, decoded_boxes,
+        loss_to_use='classification',
         loc_loss_weight=1.0, cls_loss_weight=1.0,
         num_hard_examples=3000, nms_threshold=0.99,
         max_negatives_per_positive=3, min_negatives_per_image=0):
@@ -55,10 +55,9 @@ def apply_hard_mining(
     Arguments:
         location_losses: a float tensor with shape [batch_size, num_anchors].
         cls_losses: a float tensor with shape [batch_size, num_anchors].
-        box_encodings: a float tensor with shape [batch_size, num_anchors, 4].
         class_predictions_with_background: a float tensor with shape [batch_size, num_anchors, num_classes + 1].
         matches: an int tensor with shape [batch_size, num_anchors].
-        anchors: a float tensor with shape [num_anchors, 4].
+        decoded_boxes: a float tensor with shape [batch_size, num_anchors, 4].
         loss_to_use: a string, only possible values are ['classification', 'both'].
         loc_loss_weight: a float number.
         cls_loss_weight: a float number.
@@ -69,8 +68,6 @@ def apply_hard_mining(
     Returns:
         two float tensors with shape [].
     """
-    decoded_boxes = batch_decode(box_encodings, anchors)
-    # it has shape [batch_size, num_anchors, 4]
 
     # when training it is important that
     # batch size is known
@@ -110,19 +107,19 @@ def apply_hard_mining(
         num_positives_list.append(num_positives)
         num_negatives_list.append(num_negatives)
         mined_location_losses.append(
-            tf.reduce_sum(tf.gather(location_losses_list[i], selected_indices))
+            tf.reduce_sum(tf.gather(location_losses_list[i], selected_indices), axis=0)
         )
         mined_cls_losses.append(
-            tf.reduce_sum(tf.gather(cls_losses_list[i], selected_indices))
+            tf.reduce_sum(tf.gather(cls_losses_list[i], selected_indices), axis=0)
         )
 
-    mean_num_positives = tf.reduce_mean(tf.stack(num_positives_list, axis=0))
-    mean_num_negatives = tf.reduce_mean(tf.stack(num_negatives_list, axis=0))
+    mean_num_positives = tf.reduce_mean(tf.stack(num_positives_list, axis=0), axis=0)
+    mean_num_negatives = tf.reduce_mean(tf.stack(num_negatives_list, axis=0), axis=0)
     tf.summary.scalar('mean_num_positives', mean_num_positives)
     tf.summary.scalar('mean_num_negatives', mean_num_negatives)
 
-    location_loss = tf.reduce_sum(tf.stack(mined_location_losses, axis=0))
-    cls_loss = tf.reduce_sum(tf.stack(mined_cls_losses, axis=0))
+    location_loss = tf.reduce_sum(tf.stack(mined_location_losses, axis=0), axis=0)
+    cls_loss = tf.reduce_sum(tf.stack(mined_cls_losses, axis=0), axis=0)
     return location_loss, cls_loss
 
 
@@ -151,14 +148,14 @@ def _subsample_selection_to_desired_neg_pos_ratio(
     # they have shape [num_hard_examples]
 
     # all positives in `indices` will be kept
-    num_positives = tf.reduce_sum(tf.to_int32(positives_indicator))
+    num_positives = tf.reduce_sum(tf.to_int32(positives_indicator), axis=0)
     max_negatives = tf.maximum(
         min_negatives_per_image,
         tf.to_int32(max_negatives_per_positive * tf.to_float(num_positives))
     )
 
     top_k_negatives_indicator = tf.less_equal(
-        tf.cumsum(tf.to_int32(negatives_indicator)),
+        tf.cumsum(tf.to_int32(negatives_indicator), axis=0),
         max_negatives
     )
     subsampled_selection_indices = tf.where(

@@ -1,11 +1,11 @@
 {
   "model_params": {
-    "model_dir": "models/run01",
+    "model_dir": "models/run00",
 
-    "weight_decay": 5e-4,
+    "weight_decay": 1e-3,
     "score_threshold": 0.25, "iou_threshold": 0.3, "max_boxes": 200,
 
-    "localization_loss_weight": 1.0, "classification_loss_weight": 1.0,
+    "localization_loss_weight": 2.0, "classification_loss_weight": 1.0,
 
     "loss_to_use": "classification",
     "loc_loss_weight": 0.0, "cls_loss_weight": 1.0,

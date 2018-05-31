@@ -152,7 +152,7 @@ class Pipeline:
         ) if self.resize else image
         # if you do color augmentations before resizing, it will be very slow!
 
-        image = random_color_manipulations(image, probability=0.2, grayscale_probability=0.05)
+        image = random_color_manipulations(image, probability=0.4, grayscale_probability=0.05)
         image = random_pixel_value_scale(image, minval=0.85, maxval=1.15, probability=0.2)
         boxes = random_jitter_boxes(boxes, ratio=0.01)
         image, boxes = random_flip_left_right(image, boxes)

@@ -46,13 +46,7 @@ class Detector:
             boxes = batch_decode(self.box_encodings, self.anchors)
             # it has shape [batch_size, num_anchors, 4]
 
-            class_predictions_without_background = tf.slice(
-                tf.nn.softmax(
-                    self.class_predictions_with_background, axis=2
-                ),
-                [0, 0, 1], [-1, -1, -1]
-            )
-            scores = tf.squeeze(class_predictions_without_background, axis=2)
+            scores = tf.nn.softmax(self.class_predictions_with_background, axis=2)[:, :, 1]
             # it has shape [batch_size, num_anchors]
 
         with tf.device('/cpu:0'), tf.name_scope('nms'):
@@ -84,7 +78,6 @@ class Detector:
 
             # we have binary classification for each anchor
             cls_targets = tf.to_int32(is_matched)
-            cls_targets = tf.one_hot(cls_targets, depth=2, axis=2, dtype=tf.float32)
 
             with tf.name_scope('classification_loss'):
                 cls_losses = classification_loss(
@@ -103,6 +96,22 @@ class Detector:
                 num_matches = tf.reduce_sum(matches_per_image)  # shape []
                 normalizer = tf.maximum(num_matches, 1.0)
 
+            scores = tf.nn.softmax(self.class_predictions_with_background, axis=2)
+            # it has shape [batch_size, num_anchors, 2]
+
+            decoded_boxes = batch_decode(self.box_encodings, self.anchors)
+            # it has shape [batch_size, num_anchors, 4]
+
+            # add summaries for predictions
+            is_background = tf.equal(matches, -1)
+            self._add_scalewise_histograms(tf.to_float(is_background) * scores[:, :, 0], 'background_probability')
+            self._add_scalewise_histograms(weights * scores[:, :, 1], 'face_probability')
+            ymin, xmin, ymax, xmax = tf.unstack(decoded_boxes, axis=2)
+            h, w = ymax - ymin, xmax - xmin
+            self._add_scalewise_histograms(weights * h, 'box_heights')
+            self._add_scalewise_histograms(weights * w, 'box_widths')
+
+            # add summaries for losses and matches
             self._add_scalewise_matches_summaries(weights)
             self._add_scalewise_summaries(cls_losses, name='classification_losses')
             self._add_scalewise_summaries(location_losses, name='localization_losses')
@@ -112,7 +121,7 @@ class Detector:
                 location_loss, cls_loss = apply_hard_mining(
                     location_losses, cls_losses,
                     self.class_predictions_with_background,
-                    self.box_encodings, matches, self.anchors,
+                    matches, decoded_boxes,
                     loss_to_use=params['loss_to_use'],
                     loc_loss_weight=params['loc_loss_weight'],
                     cls_loss_weight=params['cls_loss_weight'],
@@ -123,17 +132,18 @@ class Detector:
                 )
                 return {'localization_loss': location_loss/normalizer, 'classification_loss': cls_loss/normalizer}
 
-    def _add_scalewise_summaries(self, tensor, name):
+    def _add_scalewise_summaries(self, tensor, name, percent=0.2):
         """Adds histograms of the biggest 20 percent of
         tensor's values for each scale (feature map).
 
         Arguments:
             tensor: a float tensor with shape [batch_size, num_anchors].
             name: a string.
+            percent: a float number, default value is 20%.
         """
         index = 0
         for i, n in enumerate(self.num_anchors_per_feature_map):
-            k = tf.ceil(tf.to_float(n) * 0.20)  # top 20%
+            k = tf.ceil(tf.to_float(n) * percent)
             k = tf.to_int32(k)
             biggest_values, _ = tf.nn.top_k(tensor[:, index:(index + n)], k, sorted=False)
             # it has shape [batch_size, k]
@@ -141,6 +151,21 @@ class Detector:
                 name + '_on_scale_' + str(i),
                 tf.reduce_mean(biggest_values, axis=0)
             )
+            index += n
+
+    def _add_scalewise_histograms(self, tensor, name):
+        """Adds histograms of the tensor's nonzero values for each scale (feature map).
+
+        Arguments:
+            tensor: a float tensor with shape [batch_size, num_anchors].
+            name: a string.
+        """
+        index = 0
+        for i, n in enumerate(self.num_anchors_per_feature_map):
+            values = tf.reshape(tensor[:, index:(index + n)], [-1])
+            nonzero = tf.greater(values, 0.0)
+            values = tf.boolean_mask(values, nonzero)
+            tf.summary.histogram(name + '_on_scale_' + str(i), values)
             index += n
 
     def _add_scalewise_matches_summaries(self, weights):
@@ -210,13 +235,13 @@ class Detector:
                 )
                 # it has shape [batch_size, num_predictions_per_location * 4, height_i, width_i]
                 box_encodings.append(y)
-                
+
                 import numpy as np
                 biases = np.zeros([num_predictions_per_location, 2], dtype='float32')
                 biases[:, 0] = np.log(0.99)  # background class
                 biases[:, 1] = np.log(0.01)  # object class
                 biases = biases.reshape(num_predictions_per_location * 2)
-        
+
                 y = slim.conv2d(
                     x, num_predictions_per_location * 2,
                     [3, 3], activation_fn=None, scope='class_predictor_%d' % i,
