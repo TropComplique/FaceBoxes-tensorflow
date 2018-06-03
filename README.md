@@ -6,7 +6,7 @@ The detector has speed **~6.5 ms/image** (image size is 1024x1024, video card is
 
 # How to use the pretrained model
 
-To use the pretrained face detector you will need to donwnload `face_detector.py` and  
+To use the pretrained face detector you will need to download `face_detector.py` and  
 a frozen inference graph (`.pb` file, it is [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing)). You can see an example of usage in `test_detector.ipynb`.
 
 An example of face detections:
@@ -69,5 +69,5 @@ Also see this [repository](https://github.com/pkdogcom/fddb-evaluate) and the of
 # Results on FDDB
 True positive rate at 1000 false positives is `0.902`.
 Note that it is lower than in the original paper.  
-Meybe it's because some hyperparameters don't match. 
+Maybe it's because some hyperparameters are wrong.
 ![roc](roc.png)
