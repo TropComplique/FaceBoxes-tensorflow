@@ -49,6 +49,8 @@ I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but 
 6. Run `python save.py` and `create_pb.py` to convert the trained model into a `.pb` file.
 7. Use `class` in `face_detector.py` and `.pb` file to do inference.
 8. Also, you can get my final training checkpoint [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing).
+9. The training speed was `~2.6 batches/second` on one NVIDIA GeForce GTX 1080. So total training time is ~26 hours  
+(and I believe that you can make it much faster if you optimize the input pipeline).
 
 Training loss curve looks like this:
 ![loss](training_loss.png)
