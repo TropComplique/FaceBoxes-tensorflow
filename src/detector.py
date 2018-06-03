@@ -17,31 +17,39 @@ class Detector:
             feature_extractor: an instance of FeatureExtractor.
             anchor_generator: an instance of AnchorGenerator.
         """
-        
-        
+
         # sometimes images will be of different sizes,
-        # so i need use dynamic shape
+        # so i need to use the dynamic shape
         h, w = images.shape.as_list()[2:]
-        
+
+        # image padding here is very tricky and important part of the detector,
+        # if we don't do it then some bounding box
+        # predictions will be badly shifted!
+
         x = 128  # mysterious parameter
+        # (actually, it is the stride of the last layer)
+
         self.box_scaler = tf.ones([4], dtype=tf.float32)
         if h is None or w is None or h % x != 0 or w % x != 0:
             h, w = tf.shape(images)[2], tf.shape(images)[3]
             with tf.name_scope('image_padding'):
 
+                # image size must be divisible by 128
                 new_h = x * tf.to_int32(tf.ceil(h/x))
                 new_w = x * tf.to_int32(tf.ceil(w/x))
+                # also we will need to rescale bounding box coordinates
                 self.box_scaler = tf.to_float(tf.stack([
                     h/new_h, w/new_w, h/new_h, w/new_w
                 ]))
+                # pad the images with zeros on the right and on the bottom
                 images = tf.transpose(images, perm=[0, 2, 3, 1])
                 images = tf.image.pad_to_bounding_box(
-                    images, offset_height=0, offset_width=0, 
+                    images, offset_height=0, offset_width=0,
                     target_height=new_h, target_width=new_w
                 )
                 images = tf.transpose(images, perm=[0, 3, 1, 2])
                 h, w = new_h, new_w
-      
+
         feature_maps = feature_extractor(images)
         self.is_training = feature_extractor.is_training
 
@@ -63,6 +71,7 @@ class Detector:
         """
         with tf.name_scope('postprocessing'):
             boxes = batch_decode(self.box_encodings, self.anchors)
+            # if the images were padded we need to rescale predicted boxes:
             boxes = boxes / self.box_scaler
             boxes = tf.clip_by_value(boxes, 0.0, 1.0)
             # it has shape [batch_size, num_anchors, 4]
@@ -214,6 +223,7 @@ class Detector:
         def fn(x):
             boxes, num_boxes = x
             boxes = boxes[:num_boxes]
+            # if the images are padded we need to rescale groundtruth boxes:
             boxes = boxes * self.box_scaler
             reg_targets, matches = get_training_targets(
                 self.anchors, boxes, threshold=MATCHING_THRESHOLD

@@ -32,7 +32,7 @@ class FaceDetector:
         config_proto = tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False)
         self.sess = tf.Session(graph=graph, config=config_proto)
 
-    def __call__(self, image, score_threshold=0.7):
+    def __call__(self, image, score_threshold=0.5):
         """Detect faces.
 
         Arguments:
@@ -42,6 +42,8 @@ class FaceDetector:
         Returns:
             boxes: a float numpy array of shape [num_faces, 4].
             scores: a float numpy array of shape [num_faces].
+
+        Note that box coordinates are in the order: ymin, xmin, ymax, xmax!
         """
         h, w, _ = image.shape
         image = np.expand_dims(image, 0)
@@ -56,7 +58,7 @@ class FaceDetector:
         to_keep = scores > score_threshold
         boxes = boxes[to_keep]
         scores = scores[to_keep]
-        
+
         scaler = np.array([h, w, h, w], dtype='float32')
         boxes = boxes * scaler
 

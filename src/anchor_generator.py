@@ -70,7 +70,7 @@ class AnchorGenerator:
                 h, w = grid_size
                 stride = (1.0/tf.to_float(h), 1.0/tf.to_float(w))
                 offset = (0.5/tf.to_float(h), 0.5/tf.to_float(w))
-                
+
                 local_anchors = []
                 for scale, aspect_ratio, n in box_spec:
                     local_anchors.append(tile_anchors(
