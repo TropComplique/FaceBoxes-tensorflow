@@ -56,7 +56,7 @@ class FaceDetector:
         to_keep = scores > score_threshold
         boxes = boxes[to_keep]
         scores = scores[to_keep]
-
+        
         scaler = np.array([h, w, h, w], dtype='float32')
         boxes = boxes * scaler
 

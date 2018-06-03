@@ -8,7 +8,7 @@ from model import model_fn
 
 CONFIG = 'config.json'
 OUTPUT_FOLDER = 'export/run01'
-GPU_TO_USE = '1'
+GPU_TO_USE = '0'
 
 WIDTH, HEIGHT = None, None
 # size of an input image,

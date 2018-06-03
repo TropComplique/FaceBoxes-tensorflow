@@ -19,7 +19,7 @@ def main():
 
     graph = tf.Graph()
     config = tf.ConfigProto()
-    config.gpu_options.visible_device_list = '1'
+    config.gpu_options.visible_device_list = '0'
     with graph.as_default():
         with tf.Session(graph=graph, config=config) as sess:
             tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.SERVING], ARGS.saved_model_folder)
