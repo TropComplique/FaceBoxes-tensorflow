@@ -1,8 +1,20 @@
 # FaceBoxes-tensorflow
 
-This is implementation of [FaceBoxes: A CPU Real-time Face Detector with High Accuracy](https://arxiv.org/abs/1708.05234).  
-Note: it will work only on GPU because I use `NCHW` format.
+This is an implementation of [FaceBoxes: A CPU Real-time Face Detector with High Accuracy](https://arxiv.org/abs/1708.05234).  
+I provide full training code, data preparation scripts, and a pretrained model.  
+The detector has speed **~6.5 ms/image** (image size is 1024x1024, video card is NVIDIA GeForce GTX 1080).
 
+# How to use the pretrained model
+
+To use the pretrained face detector you will need to donwnload `face_detector.py` and  
+a frozen inference graph (`.pb` file) from [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing). You can see an example of usage in `test_detector.ipynb`.
+
+An example of face detections:
+![example](brockhampton_with_boxes.jpg)
+
+## Notes
+1. It will work only on GPU because I use `NCHW` format for tensors  
+(but you can easily make some changes so it also works on CPU).
 ## How to train
 
 For training I use `train`+`val` parts of the WIDER dataset.
@@ -32,12 +44,22 @@ I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but 
 5. Run `tensorboard --logdir=models/run00` to observe training and eval.
 6. Run `python save.py` and `create_pb.py` to convert the trained model into `.pb` file.
 7. Use `class` in `face_detector.py` and `.pb` file to do inference.
+8. You can get my training checkpoint from [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing).
 
 ## How to evaluate on FDDB
 
 1. Download the evaluation code from [here](http://vis-www.cs.umass.edu/fddb/results.html).
-2. `tar -zxvf evaluation.tgz; cd evaluation`
-3. Run `make`
-4. `./evaluate -a result/ellipseList.txt -d result/detections.txt -i result/images/ -l result/faceList.txt -z .jpg -f 0`
-5. https://github.com/pkdogcom/fddb-evaluate
+2. `tar -zxvf evaluation.tgz; cd evaluation`.  
+Then compile it using `make` (it can be very tricky to make it work).
+3. Run `predict_for_FDDB.ipynb` to make predictions on the evaluation dataset.  
+You will get `ellipseList.txt`, `faceList.txt`, `detections.txt`, and `images/`.
+4. Run `./evaluate -a result/ellipseList.txt -d result/detections.txt -i result/images/ -l result/faceList.txt -z .jpg -f 0`.
+5. You will get something like `discrete-ROC.txt`.
+6. Run `plot_roc.ipynb` to plot the curve.
 
+Also see this [repository](https://github.com/pkdogcom/fddb-evaluate) and the official [FAQ](http://vis-www.cs.umass.edu/fddb/faq.html) if you have questions about the evaluation.
+
+# Results on FDDB
+True positive rate at 1000 false positives is `0.902`.
+Note that it is lower than in the original paper.
+![roc](roc.png)
