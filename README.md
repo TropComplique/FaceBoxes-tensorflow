@@ -2,22 +2,23 @@
 
 This is an implementation of [FaceBoxes: A CPU Real-time Face Detector with High Accuracy](https://arxiv.org/abs/1708.05234).  
 I provide full training code, data preparation scripts, and a pretrained model.  
-The detector has speed **~6.5 ms/image** (image size is 1024x1024, video card is NVIDIA GeForce GTX 1080).
+The detector has speed **~7 ms/image** (image size is 1024x1024, video card is NVIDIA GeForce GTX 1080).
 
-# How to use the pretrained model
+## How to use the pretrained model
 
 To use the pretrained face detector you will need to download `face_detector.py` and  
 a frozen inference graph (`.pb` file, it is [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing)). You can see an example of usage in `test_detector.ipynb`.
 
 An example of face detections:
-![example](brockhampton_with_boxes.jpg)
+![example](images/brockhampton_with_boxes.jpg)
 
 ## Notes
 
 1. It will work only on GPU because I use `NCHW` format for tensors  
 (but you can easily make some changes so it also works on CPU).
-2. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
-3. You can see how data augmentation works in `test_input_pipeline.ipynb`.
+2. This detector don't work well for small faces.
+3. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
+4. You can see how data augmentation works in `test_input_pipeline.ipynb`.
 
 ## How to train
 
@@ -25,7 +26,6 @@ For training I use `train`+`val` parts of the WIDER dataset.
 It is 16106 images in total (12880 + 3226).  
 For evaluation during the training I use the FDDB dataset (2845 images).
 I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but like in PASCAL VOC Challenge).
-
 
 1. Run `explore_and_prepare_WIDER.ipynb` to prepare the WIDER dataset   
 (also, you will need to combine the two created dataset parts using `cp train_part2/* train/ -a`).
@@ -53,7 +53,7 @@ I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but 
 (and I believe that you can make it much shorter if you optimize the input pipeline).
 
 Training loss curve looks like this:
-![loss](training_loss.png)
+![loss](images/training_loss.png)
 
 ## How to evaluate on FDDB
 
@@ -68,8 +68,11 @@ You will get `ellipseList.txt`, `faceList.txt`, `detections.txt`, and `images/`.
 
 Also see this [repository](https://github.com/pkdogcom/fddb-evaluate) and the official [FAQ](http://vis-www.cs.umass.edu/fddb/faq.html) if you have questions about the evaluation.
 
-# Results on FDDB
+## Results on FDDB
 True positive rate at 1000 false positives is `0.902`.
 Note that it is lower than in the original paper.  
 Maybe it's because some hyperparameters are wrong.
-![roc](roc.png)
+
+![roc](images/roc.png)
+
+You can see the whole curve in `discrete-ROC.txt` (it's the output if the official evaluation script).
