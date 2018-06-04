@@ -75,4 +75,4 @@ Maybe it's because some hyperparameters are wrong.
 
 ![roc](images/roc.png)
 
-You can see the whole curve in `discrete-ROC.txt` (it's the output if the official evaluation script).
+You can see the whole curve in `discrete-ROC.txt` (it's the output of the official evaluation script).
