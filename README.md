@@ -12,6 +12,11 @@ a frozen inference graph (`.pb` file, it is [here](https://drive.google.com/driv
 An example of face detections:
 ![example](images/brockhampton_with_boxes.jpg)
 
+## Requirements
+
+* tensorflow 1.8
+* opencv-python, Pillow, tqdm
+
 ## Notes
 
 1. It will work only on GPU because I use `NCHW` format for tensors  
@@ -27,9 +32,9 @@ It is 16106 images in total (12880 + 3226).
 For evaluation during the training I use the FDDB dataset (2845 images).
 I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but like in PASCAL VOC Challenge).
 
-1. Run `explore_and_prepare_WIDER.ipynb` to prepare the WIDER dataset   
+1. Run `prepare_data/explore_and_prepare_WIDER.ipynb` to prepare the WIDER dataset   
 (also, you will need to combine the two created dataset parts using `cp train_part2/* train/ -a`).
-2. Run `explore_and_prepare_FDDB.ipynb` to prepare the FDDB dataset.
+2. Run `prepare_data/explore_and_prepare_FDDB.ipynb` to prepare the FDDB dataset.
 3. Create tfrecords:
   ```
   python create_tfrecords.py \
@@ -63,8 +68,8 @@ Then compile it using `make` (it can be very tricky to make it work).
 3. Run `predict_for_FDDB.ipynb` to make predictions on the evaluation dataset.  
 You will get `ellipseList.txt`, `faceList.txt`, `detections.txt`, and `images/`.
 4. Run `./evaluate -a result/ellipseList.txt -d result/detections.txt -i result/images/ -l result/faceList.txt -z .jpg -f 0`.
-5. You will get something like `discrete-ROC.txt`.
-6. Run `plot_roc.ipynb` to plot the curve.
+5. You will get something like `eval_results/discrete-ROC.txt`.
+6. Run `eval_results/plot_roc.ipynb` to plot the curve.
 
 Also see this [repository](https://github.com/pkdogcom/fddb-evaluate) and the official [FAQ](http://vis-www.cs.umass.edu/fddb/faq.html) if you have questions about the evaluation.
 
@@ -73,6 +78,6 @@ True positive rate at 1000 false positives is `0.902`.
 Note that it is lower than in the original paper.  
 Maybe it's because some hyperparameters are wrong.
 
-![roc](images/roc.png)
+![roc](eval_results/roc.png)
 
-You can see the whole curve in `discrete-ROC.txt` (it's the output of the official evaluation script).
+You can see the whole curve in `eval_results/discrete-ROC.txt` (it's the output of the official evaluation script).

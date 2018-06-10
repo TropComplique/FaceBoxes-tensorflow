@@ -200,15 +200,15 @@ def compute_best_threshold(precision, recall, confidences):
 
 
 def compute_iou(box1, box2):
-    w = (min(box1.xmax, box2.xmax) - max(box1.xmin, box2.xmin)) + 1
+    w = min(box1.xmax, box2.xmax) - max(box1.xmin, box2.xmin)
     if w > 0:
-        h = (min(box1.ymax, box2.ymax) - max(box1.ymin, box2.ymin)) + 1
+        h = min(box1.ymax, box2.ymax) - max(box1.ymin, box2.ymin)
         if h > 0:
             intersection = w*h
-            w1 = box1.xmax - box1.xmin + 1
-            h1 = box1.ymax - box1.ymin + 1
-            w2 = box2.xmax - box2.xmin + 1
-            h2 = box2.ymax - box2.ymin + 1
+            w1 = box1.xmax - box1.xmin
+            h1 = box1.ymax - box1.ymin
+            w2 = box2.xmax - box2.xmin
+            h2 = box2.ymax - box2.ymin
             union = (w1*h1 + w2*h2) - intersection
             return float(intersection)/float(union)
     return 0.0
