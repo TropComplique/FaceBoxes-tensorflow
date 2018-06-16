@@ -9,8 +9,9 @@ The detector has speed **~7 ms/image** (image size is 1024x1024, video card is N
 To use the pretrained face detector you will need to download `face_detector.py` and  
 a frozen inference graph (`.pb` file, it is [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing)). You can see an example of usage in `try_detector.ipynb`.
 
-An example of face detections:
-![example](images/brockhampton_with_boxes.jpg)
+Examples of face detections:
+![example1](images/brockhampton.jpg)
+![example1](images/the_office.jpg)
 
 ## Requirements
 
