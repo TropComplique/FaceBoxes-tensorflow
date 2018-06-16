@@ -22,16 +22,15 @@ Examples of face detections:
 
 1. It will work only on GPU because I use `NCHW` format for tensors  
 (but you can easily make some changes so it also works on CPU).
-2. This detector don't work well for small faces.
+2. This detector doesn't work well on small faces.
 3. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
-4. You can see how data augmentation works in `test_input_pipeline.ipynb`.
+4. You can see how my data augmentation works in `test_input_pipeline.ipynb`.
 
 ## How to train
 
 For training I use `train`+`val` parts of the WIDER dataset.
 It is 16106 images in total (12880 + 3226).  
-For evaluation during the training I use the FDDB dataset (2845 images).
-I use `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but like in PASCAL VOC Challenge).
+For evaluation during the training I use the FDDB dataset (2845 images) and `AP@IOU=0.5` metrics (it is not like in the original FDDB evaluation, but like in PASCAL VOC Challenge).
 
 1. Run `prepare_data/explore_and_prepare_WIDER.ipynb` to prepare the WIDER dataset   
 (also, you will need to combine the two created dataset parts using `cp train_part2/* train/ -a`).
