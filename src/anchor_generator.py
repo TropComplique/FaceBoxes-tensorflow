@@ -41,7 +41,7 @@ class AnchorGenerator:
         """
         Arguments:
             image_features: a list of float tensors where the ith tensor
-                has shape [batch, channels_i, height_i, width_i].
+                has shape [batch, height_i, width_i, channels_i].
             image_size: a tuple of integers (int tensors with shape []) (width, height).
         Returns:
             a float tensor with shape [num_anchor, 4],
@@ -50,9 +50,9 @@ class AnchorGenerator:
         feature_map_shape_list = []
         for feature_map in image_features:
 
-            height_i, width_i = feature_map.shape.as_list()[2:]
+            height_i, width_i = feature_map.shape.as_list()[1:3]
             if height_i is None or width_i is None:
-                height_i, width_i = tf.shape(feature_map)[2], tf.shape(feature_map)[3]
+                height_i, width_i = tf.shape(feature_map)[1], tf.shape(feature_map)[2]
 
             feature_map_shape_list.append((height_i, width_i))
         image_width, image_height = image_size

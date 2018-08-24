@@ -24,6 +24,7 @@ Examples of face detections:
 But you can improve its performance if you upscale images before feeding them to the network.
 2. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
 3. You can see how my data augmentation works in `test_input_pipeline.ipynb`.
+4. The speed on a CPU is **~30 ms/image** (image size is 1024x768).
 
 ## How to train
 

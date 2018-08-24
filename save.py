@@ -32,7 +32,7 @@ estimator = tf.estimator.Estimator(model_fn, params=model_params, config=run_con
 
 def serving_input_receiver_fn():
     images = tf.placeholder(dtype=tf.uint8, shape=[None, HEIGHT, WIDTH, 3], name='image_tensor')
-    features = {'images': tf.transpose(tf.to_float(images)*(1.0/255.0), perm=[0, 3, 1, 2])}
+    features = {'images': tf.to_float(images)*(1.0/255.0)}
     return tf.estimator.export.ServingInputReceiver(features, {'images': images})
 
 

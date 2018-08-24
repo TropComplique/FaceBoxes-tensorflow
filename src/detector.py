@@ -301,5 +301,5 @@ class Detector:
                 y = tf.reshape(y, [batch_size, height_i, width_i, num_predictions_per_location, 2])
                 class_predictions_with_background[i] = tf.reshape(y, tf.stack([batch_size, num_anchors_on_feature_map, 2]))
 
-            self.box_encodings = tf.concat(box_encodings, axis=3)
-            self.class_predictions_with_background = tf.concat(class_predictions_with_background, axis=3)
+            self.box_encodings = tf.concat(box_encodings, axis=1)
+            self.class_predictions_with_background = tf.concat(class_predictions_with_background, axis=1)
