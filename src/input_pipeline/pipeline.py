@@ -62,7 +62,7 @@ class Pipeline:
         dataset = dataset.map(self._parse_and_preprocess, num_parallel_calls=NUM_THREADS)
 
         # we need batches of fixed size
-        padded_shapes = ([3, self.image_height, self.image_width], [None, 4], [], [])
+        padded_shapes = ([self.image_height, self.image_width, 3], [None, 4], [], [])
         dataset = dataset.apply(
            tf.contrib.data.padded_batch_and_drop_remainder(batch_size, padded_shapes)
         )
@@ -74,7 +74,7 @@ class Pipeline:
         """
         Returns:
             features: a dict with the following keys
-                'images': a float tensor with shape [batch_size, 3, image_height, image_width].
+                'images': a float tensor with shape [batch_size, image_height, image_width, 3].
                 'filenames': a string tensor with shape [batch_size].
             labels: a dict with the following keys
                 'boxes': a float tensor with shape [batch_size, max_num_boxes, 4].
@@ -92,7 +92,7 @@ class Pipeline:
         2. (optionally) Augments it.
 
         Returns:
-            image: a float tensor with shape [3, image_height, image_width],
+            image: a float tensor with shape [image_height, image_width, 3],
                 an RGB image with pixel values in the range [0, 1].
             boxes: a float tensor with shape [num_boxes, 4].
             num_boxes: an int tensor with shape [].
@@ -130,7 +130,6 @@ class Pipeline:
                 method=RESIZE_METHOD
             ) if self.resize else image
 
-        image = tf.transpose(image, perm=[2, 0, 1])  # to NCHW format
         num_boxes = tf.to_int32(tf.shape(boxes)[0])
         filename = parsed_features['filename']
         return image, boxes, num_boxes, filename

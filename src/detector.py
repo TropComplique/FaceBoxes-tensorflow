@@ -12,7 +12,7 @@ class Detector:
     def __init__(self, images, feature_extractor, anchor_generator):
         """
         Arguments:
-            images: a float tensor with shape [batch_size, 3, height, width],
+            images: a float tensor with shape [batch_size, height, width, 3],
                 a batch of RGB images with pixel values in the range [0, 1].
             feature_extractor: an instance of FeatureExtractor.
             anchor_generator: an instance of AnchorGenerator.
@@ -20,7 +20,7 @@ class Detector:
 
         # sometimes images will be of different sizes,
         # so i need to use the dynamic shape
-        h, w = images.shape.as_list()[2:]
+        h, w = images.shape.as_list()[1:3]
 
         # image padding here is very tricky and important part of the detector,
         # if we don't do it then some bounding box
@@ -31,7 +31,7 @@ class Detector:
 
         self.box_scaler = tf.ones([4], dtype=tf.float32)
         if h is None or w is None or h % x != 0 or w % x != 0:
-            h, w = tf.shape(images)[2], tf.shape(images)[3]
+            h, w = tf.shape(images)[1], tf.shape(images)[2]
             with tf.name_scope('image_padding'):
 
                 # image size must be divisible by 128
@@ -42,12 +42,10 @@ class Detector:
                     h/new_h, w/new_w, h/new_h, w/new_w
                 ]))
                 # pad the images with zeros on the right and on the bottom
-                images = tf.transpose(images, perm=[0, 2, 3, 1])
                 images = tf.image.pad_to_bounding_box(
                     images, offset_height=0, offset_width=0,
                     target_height=new_h, target_width=new_w
                 )
-                images = tf.transpose(images, perm=[0, 3, 1, 2])
                 h, w = new_h, new_w
 
         feature_maps = feature_extractor(images)
@@ -244,7 +242,7 @@ class Detector:
 
         Arguments:
             feature_maps: a list of float tensors where the ith tensor has shape
-                [batch, channels_i, height_i, width_i].
+                [batch, height_i, width_i, channels_i].
 
         It creates two tensors:
             box_encodings: a float tensor with shape [batch_size, num_anchors, 4].
@@ -264,9 +262,9 @@ class Detector:
                 y = slim.conv2d(
                     x, num_predictions_per_location * 4,
                     [3, 3], activation_fn=None, scope='box_encoding_predictor_%d' % i,
-                    data_format='NCHW', padding='SAME'
+                    data_format='NHWC', padding='SAME'
                 )
-                # it has shape [batch_size, num_predictions_per_location * 4, height_i, width_i]
+                # it has shape [batch_size, height_i, width_i, num_predictions_per_location * 4]
                 box_encodings.append(y)
 
                 import numpy as np
@@ -278,10 +276,10 @@ class Detector:
                 y = slim.conv2d(
                     x, num_predictions_per_location * 2,
                     [3, 3], activation_fn=None, scope='class_predictor_%d' % i,
-                    data_format='NCHW', padding='SAME',
+                    data_format='NHWC', padding='SAME',
                     biases_initializer=tf.constant_initializer(biases)
                 )
-                # it has  shape [batch_size, num_predictions_per_location * 2, height_i, width_i]
+                # it has  shape [batch_size, height_i, width_i, num_predictions_per_location * 2]
                 class_predictions_with_background.append(y)
 
         # it is important that reshaping here is the same as when anchors were generated
@@ -291,19 +289,17 @@ class Detector:
                 x = feature_maps[i]
                 num_predictions_per_location = num_anchors_per_location[i]
                 batch_size = tf.shape(x)[0]
-                height_i = tf.shape(x)[2]
-                width_i = tf.shape(x)[3]
+                height_i = tf.shape(x)[1]
+                width_i = tf.shape(x)[2]
                 num_anchors_on_feature_map = height_i * width_i * num_predictions_per_location
 
                 y = box_encodings[i]
-                y = tf.transpose(y, perm=[0, 2, 3, 1])
                 y = tf.reshape(y, tf.stack([batch_size, height_i, width_i, num_predictions_per_location, 4]))
                 box_encodings[i] = tf.reshape(y, [batch_size, num_anchors_on_feature_map, 4])
 
                 y = class_predictions_with_background[i]
-                y = tf.transpose(y, perm=[0, 2, 3, 1])
                 y = tf.reshape(y, [batch_size, height_i, width_i, num_predictions_per_location, 2])
                 class_predictions_with_background[i] = tf.reshape(y, tf.stack([batch_size, num_anchors_on_feature_map, 2]))
 
-            self.box_encodings = tf.concat(box_encodings, axis=1)
-            self.class_predictions_with_background = tf.concat(class_predictions_with_background, axis=1)
+            self.box_encodings = tf.concat(box_encodings, axis=3)
+            self.class_predictions_with_background = tf.concat(class_predictions_with_background, axis=3)

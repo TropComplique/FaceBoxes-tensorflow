@@ -15,16 +15,15 @@ Examples of face detections:
 
 ## Requirements
 
-* tensorflow 1.8
+* tensorflow 1.10
 * opencv-python, Pillow, tqdm
 
 ## Notes
 
-1. It will work only on GPU because I use `NCHW` format for tensors  
-(but you can easily make some changes so it also works on CPU).
-2. This detector doesn't work well on small faces.
-3. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
-4. You can see how my data augmentation works in `test_input_pipeline.ipynb`.
+1. This detector doesn't work well on small faces.  
+But you can improve its performance if you upscale images before feeding them to the network.
+2. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
+3. You can see how my data augmentation works in `test_input_pipeline.ipynb`.
 
 ## How to train
 
@@ -76,7 +75,9 @@ Also see this [repository](https://github.com/pkdogcom/fddb-evaluate) and the of
 ## Results on FDDB
 True positive rate at 1000 false positives is `0.902`.
 Note that it is lower than in the original paper.  
-Maybe it's because some hyperparameters are wrong.
+Maybe it's because some hyperparameters are wrong.  
+Or it's because I didn't do any upscaling of images when evaluating
+(I used the original image size).
 
 ![roc](eval_results/roc.png)
 
