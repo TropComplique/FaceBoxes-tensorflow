@@ -20,8 +20,9 @@ Examples of face detections:
 
 ## Notes
 
-1. This detector doesn't work well on small faces.  
-But you can improve its performance if you upscale images before feeding them to the network.
+1. *Warning:* This detector doesn't work well on small faces.  
+But you can improve its performance if you upscale images before feeding them to the network.  
+For example, resize an image keeping its aspect ratio so its smaller dimension is 768.
 2. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
 3. You can see how my data augmentation works in `test_input_pipeline.ipynb`.
 4. The speed on a CPU is **~30 ms/image** (image size is 1024x768).
