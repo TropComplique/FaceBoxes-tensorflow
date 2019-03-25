@@ -77,7 +77,7 @@ class Detector:
             scores = tf.nn.softmax(self.class_predictions_with_background, axis=2)[:, :, 1]
             # it has shape [batch_size, num_anchors]
 
-        with tf.device('/cpu:0'), tf.name_scope('nms'):
+        with tf.name_scope('nms'):
             boxes, scores, num_detections = batch_non_max_suppression(
                 boxes, scores, score_threshold, iou_threshold, max_boxes
             )

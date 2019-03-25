@@ -7,7 +7,7 @@ The detector has speed **~7 ms/image** (image size is 1024x1024, video card is N
 ## How to use the pretrained model
 
 To use the pretrained face detector you will need to download `face_detector.py` and  
-a frozen inference graph (`.pb` file, it is [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing)). You can see an example of usage in `try_detector.ipynb`.
+a frozen inference graph (`.pb` file, it is [here](https://drive.google.com/drive/folders/1DYdxvMXm6n6BsOy4dOTbN9h43F0CoUoK?usp=sharing)). You can see an example of usage in `try_detector.ipynb`. 
 
 Examples of face detections:
 ![example1](images/brockhampton.jpg)
@@ -25,7 +25,7 @@ But you can improve its performance if you upscale images before feeding them to
 For example, resize an image keeping its aspect ratio so its smaller dimension is 768.
 2. You can see how anchor densification works in `visualize_densified_anchor_boxes.ipynb`.
 3. You can see how my data augmentation works in `test_input_pipeline.ipynb`.
-4. The speed on a CPU is **~30 ms/image** (image size is 1024x768).
+4. The speed on a CPU is **~25 ms/image** (image size is 1024x768, model is i7-7700K CPU @ 4.20GHz).
 
 ## How to train
 
