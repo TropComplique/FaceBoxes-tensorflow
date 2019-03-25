@@ -15,7 +15,7 @@ Examples of face detections:
 
 ## Requirements
 
-* tensorflow 1.10
+* tensorflow 1.10 (inference was tested using tensorflow 1.12)
 * opencv-python, Pillow, tqdm
 
 ## Notes
